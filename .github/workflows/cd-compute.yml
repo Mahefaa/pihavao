@@ -27,6 +27,7 @@ jobs:
           -H "Content-Type: application/json" \
           -d "{\"app_env_deployment_id\":\"${{ env.app_env_deployment_id }}\", \"commit_sha\":\"${{ github.sha }}\", \"commit_message\":$(echo \"$commit_message\"), \"commit_author_name\":$(echo \"$GITHUB_ACTOR\"), \"status\":\"WORKFLOW_RUNNING\", \"environment_type\":$(echo \"${{ github.ref_name }}\" | tr \"[:lower:]\" \'[:upper:]\")}")
           echo "app_env_deployment_id=$(echo $response | jq -r '.app_env_deployment_id')" >> $GITHUB_ENV
+          echo "{\"app_env_deployment_id\":\"${{ env.app_env_deployment_id }}\", \"commit_sha\":\"${{ github.sha }}\", \"commit_message\":$(echo \"$commit_message\"), \"commit_author_name\":$(echo \"$GITHUB_ACTOR\"), \"status\":\"WORKFLOW_RUNNING\", \"environment_type\":$(echo \"${{ github.ref_name }}\" | tr \"[:lower:]\" \'[:upper:]\")}"
           echo $response
 
       - uses: actions/setup-java@v4.2.1
