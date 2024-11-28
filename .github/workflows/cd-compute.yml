@@ -22,10 +22,17 @@ jobs:
       - name: Update github workflow state
         run: |
           commit_message=$(git log -1 --pretty=%B)
-          response=$(curl -X POST "https://api.preprod.jcloudify.com/gh-repos/${{ github.repository }}/github-workflow-state" \
+          commit_author=$(git log -1 --pretty=%an)
+          app_env_deployment_id_value=${{ env.app_env_deployment_id }}
+          if [ -z "$app_env_deployment_id_value" ]; then
+            app_env_deployment_id_value=null
+          else
+            app_env_deployment_id_value="\"$app_env_deployment_id_value\""
+          fi
+          response=$(curl --fail -X POST "https://api.preprod.jcloudify.com/gh-repos/${{ github.repository }}/github-workflow-state" \
           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           -H "Content-Type: application/json" \
-          -d "{\"app_env_deployment_id\":\"${{ env.app_env_deployment_id }}\", \"commit_sha\":\"${{ github.sha }}\", \"commit_message\":$(echo \"$commit_message\"), \"commit_author_name\":$(echo \"$GITHUB_ACTOR\"), \"status\":\"WORKFLOW_RUNNING\", \"environment_type\":$(echo \"${{ github.ref_name }}\" | tr \"[:lower:]\" \'[:upper:]\")}")
+          -d "{\"app_env_deployment_id\":$app_env_deployment_id_value, \"commit_sha\":\"${{ github.sha }}\", \"commit_message\":$(echo \"$commit_message\"), \"commit_author_name\":$(echo \"$commit_author\"), \"status\":\"WORKFLOW_RUNNING\", \"environment_type\":$(echo \"${{ github.ref_name }}\" | tr \"[:lower:]\" \'[:upper:]\")}")
           echo "app_env_deployment_id=$(echo $response | jq -r '.app_env_deployment_id')" >> $GITHUB_ENV
           echo $response
 
@@ -73,7 +80,13 @@ jobs:
       - name: Update github state if step fails
         if: failure()
         run: |
+          app_env_deployment_id_value=${{ env.app_env_deployment_id }}
+          if [ -z "$app_env_deployment_id_value" ]; then
+            app_env_deployment_id_value=null
+          else
+            app_env_deployment_id_value="\"$app_env_deployment_id_value\""
+          fi
           curl -X POST "https://api.preprod.jcloudify.com/gh-repos/${{ github.repository }}/github-workflow-state" \
           -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
           -H "Content-Type: application/json" \
-          -d "{\"app_env_deployment_id\":\"${{ env.app_env_deployment_id }}\", \"commit_sha\":\"${{ github.sha }}\",\"commit_message\":$(echo \"$commit_message\"), \"commit_author_name\":$(echo \"$GITHUB_ACTOR\"), \"status\":\"WORKFLOW_FAILED\", \"environment_type\":$(echo \"${{ github.ref_name }}\" | tr \"[:lower:]\" \'[:upper:]\")}"
+          -d "{\"app_env_deployment_id\":$app_env_deployment_id_value, \"commit_sha\":\"${{ github.sha }}\",\"commit_message\":$(echo \"$commit_message\"), \"commit_author_name\":$(echo \"$GITHUB_ACTOR\"), \"status\":\"WORKFLOW_FAILED\", \"environment_type\":$(echo \"${{ github.ref_name }}\" | tr \"[:lower:]\" \'[:upper:]\")}"
